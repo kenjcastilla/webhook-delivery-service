@@ -1,82 +1,79 @@
-generator client {
-   provider = "prisma-client-js"
-
+datasource db {
+  provider = "postgresql"
 }
 
-datasource db {
-   provider = "postgresql"
-   url = env("DATABASE_URL")
-
+generator client {
+  provider = "prisma-client-js"
 }
 
 // A registered consumer that wants to receive webhook events
 model Subscriber {
-   id          String   @id @default(uuid())
-   name        String
-   targetUrl   String   // The endpoint that receives the webhooks
-   secret      String   // Used to sign payloads (uses HMAC-SHA256)
-   eventTypes  String[] // e.g. ["order.created", "payment.failed"]
-   isActive    Boolean  @default(true)
-   createdAt   DateTime @default(now())
-   updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  name       String
+  targetUrl  String // The endpoint that receives the webhooks
+  secret     String // Used to sign payloads (uses HMAC-SHA256)
+  eventTypes String[] // e.g. ["order.created", "payment.failed"]
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-   deliveries  Delivery[]
+  deliveries Delivery[]
 
-   @@map("subscribers")
+  @@map("subscribers")
 }
 
 // An inbound event received from a publisher
 model Event {
-   id          String   @id @default(uuid())
-   eventType   String   // ex. "order.created"
-   payload     Json     // Raw event payload
-   receivedAt  DateTime @default(now())
+  id         String     @id @default(uuid())
+  eventType  String // ex. "order.created"
+  payload    Json // Raw event payload
+  receivedAt DateTime   @default(now())
+  deliveries Delivery[]
 }
 
 // A singular delivery attempt for an event-to-subscriber pair
 model Delivery {
-   id             String         @id @default(uuid())
-   eventId        String
-   subscriberId   String
-   status         DeliveryStatus @default(PENDING)
-   attempts       Int            @default(0)
-   maxAttempts    Int            @default(5)
-   nextRetryAt    DateTime?
-   lastAttemptAt  DateTime?
-   createdAt      DateTime       @default(now())
-   updatedAt      DateTime       @updatedAt      
+  id            String         @id @default(uuid())
+  eventId       String
+  subscriberId  String
+  status        DeliveryStatus @default(PENDING)
+  attempts      Int            @default(0)
+  maxAttempts   Int            @default(5)
+  nextRetryAt   DateTime?
+  lastAttemptAt DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-   event          Event          @relation(fields: [eventId], references: [id])
-   subscriber     Subscriber     @relation(fields: [subscriberId], references: [id])
-   logs           DeliverLog[]
+  event      Event         @relation(fields: [eventId], references: [id])
+  subscriber Subscriber    @relation(fields: [subscriberId], references: [id])
+  logs       DeliveryLog[]
 
-   @@index([status, nextRetryAt])
-   @@index([subscriberId])
-   @@index([eventId])
-   @@map("deliveries")
+  @@index([status, nextRetryAt])
+  @@index([subscriberId])
+  @@index([eventId])
+  @@map("deliveries")
 }
 
 // Log of every HTTP attempt
 model DeliveryLog {
-   id             String   @id @default(uuid())
-   deliveryId     String
-   attemptNumber  Id
-   statusCode     Int?     // HTTP Response Code, null means network error
-   responseBody   String?
-   errorMessage   String?
-   duration       Int      // in milliseconds
-   createdAt      DateTime @default(now())
+  id            String   @id @default(uuid())
+  deliveryId    String
+  attemptNumber Int
+  statusCode    Int? // HTTP Response Code, null means network error
+  responseBody  String?
+  errorMessage  String?
+  duration      Int // In milliseconds
+  createdAt     DateTime @default(now())
 
-   delivery       Delivery @relation(fields: [deliveryId], references: [id])
+  delivery Delivery @relation(fields: [deliveryId], references: [id])
 
-   @@map("delivery_logs")
+  @@map("delivery_logs")
 }
 
 enum DeliveryStatus {
-   PENDING
-   DELIVERING
-   DELIVERED
-   FAILED
-   DEAD // When max no. retries has been exceeded
+  PENDING
+  DELIVERING
+  DELIVERED
+  FAILED
+  DEAD // When max no. retries has been exceeded
 }
-
