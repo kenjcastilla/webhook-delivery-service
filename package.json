@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/kenjcastilla/webhook-delivery-service#readme",
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^25.3.0",
     "@types/pg": "^8.16.0",
     "typescript": "^5.9.3"
@@ -26,8 +27,11 @@
   "dependencies": {
     "@prisma/client": "^7.4.1",
     "@prisma/config": "^7.4.1",
+    "bullmq": "^5.70.1",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "prisma": "^7.4.1"
+    "ioredis": "^5.10.0",
+    "prisma": "^7.4.1",
+    "winston": "^3.19.0"
   }
 }
