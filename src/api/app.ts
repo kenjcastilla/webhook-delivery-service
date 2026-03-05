@@ -8,6 +8,8 @@ import { eventsRouter } from "./routes/events.js";
 import { subscribersRouter } from "./routes/subscribers.js";
 import { deliveriesRouter } from "./routes/deliveries.js";
 import { logger } from "../utils/logger.js";
+import { notFound } from "./middleware/notFound.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 
 export function createApp(): Application {
@@ -39,9 +41,8 @@ export function createApp(): Application {
    app.use("/api/v1/deliveries", deliveriesRouter);
 
    // Error handling
-   /**
-    * TODO: Building this in middleware
-    */
+   app.use(notFound);
+   app.use(errorHandler);
 
    return app;
 }
