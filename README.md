@@ -3,6 +3,8 @@ A webhook delivery service built to disseminate events to subscribers. Equipped 
 
 ## Major Dependencies
 Typescript, Express, PostgreSQL via Prisma, and BullMQ with Redis.
+### PostgreSQL
+Set up a local PostgreSQL database and put url and login information in your .env file, and update any db info in the [Docker compose file](docker-compose.yml). 
 
 ---
 ## Getting Started
