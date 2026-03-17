@@ -51,7 +51,7 @@ deliveriesRouter.get('/:id', async (req: Request, res: Response, next: NextFunct
 });
 
 /**POST request to api/v1/deliveries/:id/retry
- * Manually retry a dead of failed delivery
+ * Manually retry a dead or failed delivery
  */
 deliveriesRouter.post('/:id/retry', async (req: Request, res: Response, next: NextFunction) => {
    try {
@@ -69,7 +69,7 @@ deliveriesRouter.post('/:id/retry', async (req: Request, res: Response, next: Ne
          return;
       }
 
-      //Reset delivery state and re-queue
+      // Reset delivery state and re-queue
       await deliveryQueue.add('deliver', { deliveryId: delivery.id });
 
       res.json({ message: 'Delivery re-queued', deliveryId: delivery.id });

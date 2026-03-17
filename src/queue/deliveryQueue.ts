@@ -13,7 +13,7 @@ export const deliveryQueue = new Queue<DeliveryJobData>(DELIVERY_QUEUE_NAME, {
       attempts: 5,
       backoff: {
          type: 'exponential',
-         delay: 5000, //5s, 10s, 20s, 40s, 80s
+         delay: 5000, // 5s, 10s, 20s, 40s, 80s
       },
       removeOnComplete: { count: 1000 },
       removeOnFail: { count: 5000 },
