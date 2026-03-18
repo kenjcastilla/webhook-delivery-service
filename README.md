@@ -38,6 +38,7 @@ npm run dev
 ```bash
 npm run worker
 ```
+
 ---
 ## Flow of the Delivery Service
 An *event* (e.g. the creation of a food order) is ingested at an API endpoint (e.g. "api/v1/events") using an Express router. The event arrives at the endpoint as an [object](src/api/routes/events.ts#L28) with the *event type* (e.g. order creation) and the *payload* (e.g. "order id" and "total cost of the order"). 
