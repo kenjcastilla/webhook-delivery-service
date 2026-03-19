@@ -6,18 +6,18 @@ function requireEnv(key: string): string {
 
 export const config = {
    nodeEnv: process.env.NODE_ENV ?? 'development',
-   port: parseInt(process.env.PORT ?? '3000', 10),
+   port: parseInt(requireEnv('NODE_PORT'), 10),
 
    redis: {
       host: process.env.REDIS_HOST ?? 'localhost',
-      port: parseInt(process.env.REDIS_PORT ?? '3000', 10),
+      port: parseInt(requireEnv('REDIS_PORT'), 10),
       password: process.env.REDIS_PASSWORD ?? undefined,
    },
 
    delivery: {
-      concurrency: parseInt(process.env.DELIVERY_CONCURRENCY ?? '5', 10),
-      maxAttempts: parseInt(process.env.DELIVERY_MAX_ATTEMPTS ?? '5', 10),
-      initialRetryDelayMs: parseInt(process.env.DELIVERY_INITIAL_RETRY_DELAY_MS ?? '5000', 10),
+      concurrency: parseInt(requireEnv('DELIVERY_CONCURRENCY'), 10),
+      maxAttempts: parseInt(requireEnv('DELIVERY_MAX_ATTEMPTS'), 10),
+      initialRetryDelayMs: parseInt(requireEnv('DELIVERY_INITIAL_RETRY_DELAY_MS'), 10),
    },
 
 } as const;
