@@ -3,6 +3,7 @@ import { db } from "../db/index.js";
 import axios from "axios";
 import { logger } from "../utils/logger.js";
 import { DeliveryStatus } from "@prisma/client";
+import { UnrecoverableError } from "bullmq";
 
 
 
@@ -38,7 +39,7 @@ export class DeliveryService {
                "X-Webhook-Delivery": deliveryId,
             },
             timeout: 10 * 1000, // 10s
-            validateStatus: (status) => status < 500 // 2xx/3xx/4xx codes don't concern us here
+            validateStatus: (status) => status < 500, // only server error codes (5xx) are relevant here
          });
          
          statusCode = response.status;
@@ -56,7 +57,9 @@ export class DeliveryService {
       let newStatus: DeliveryStatus;
       if (success) {
          newStatus = DeliveryStatus.DELIVERED;
-      } else if (isLastAttempt) {
+      } 
+      // Won't retry a delivery after last attempt or upon receiving a 4xx response (client error)
+      else if (isLastAttempt || (statusCode && statusCode >= 400 && statusCode < 500)) {
          newStatus = DeliveryStatus.DEAD;
       } else {
          newStatus = DeliveryStatus.PENDING;
@@ -84,9 +87,12 @@ export class DeliveryService {
          }),
       ]);
       
-      // Re-throw to notify BullMQ (re-try notification)
+      // Re-throw to notify BullMQ (notification to retry or mark as failed)
       if (!success) {
-         throw new Error(errorMessage ?? `Non-2xx response: ${statusCode}`);
+         if (isLastAttempt || (statusCode && statusCode >= 400 && statusCode < 500)) {
+            throw new UnrecoverableError(errorMessage ?? `Delivery failed with status ${statusCode} and will not be retried`); // Won't retry
+         }
+         throw new Error(errorMessage ?? `Non-2xx response: ${statusCode}`); // Will retry
       }
 
       logger.info(`Delivery ${deliveryId} succeeded on attempt ${attemptNumber}`);

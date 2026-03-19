@@ -25,7 +25,7 @@ worker.on("completed", (job) => {
 });
 
 worker.on("failed", (job, e) => {
-   logger.info(`Job ${job?.id} failed`);
+   logger.error(`Job ${job?.id} failed: ${e.message}`, { error: e });
 });
 
 logger.info(`Delivery worker started (concurrency=${config.delivery.concurrency})`);
