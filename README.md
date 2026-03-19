@@ -43,9 +43,9 @@ npm run worker
 ## Flow of the Delivery Service
 An *event* (e.g. the creation of a food order) is ingested at an API endpoint (e.g. "api/v1/events") using an Express router. The event arrives at the endpoint as an [object](src/api/routes/events.ts#L28) with the *event type* (e.g. order creation) and the *payload* (e.g. "order id" and "total cost of the order"). 
 
-After the event is ingested, as long as there is at least one subscriber to this event type, an [event *record*](prisma/schema.prisma#L25) is created. If there are no subscribers to the event type, this entire delivery process is abandoned.
+After the event is ingested, an [event *record*](prisma/schema.prisma#L25) is created. **If there are no subscribers to the event type, the delivery process ends with the creation of the event record**, as there is no one to send the event information to, but we still want proof of the event's occurrence.
 
-If subscribers have been identified and the event record has been [created](src/api/routes/events.ts#L43) in the database, for each delivery, a [delivery *job*](src/workers/deliveryWorker.ts#L13) is [generated and enqueued](src/api/routes/events.ts#L58). 
+If subscribers have been identified and the event record [created](src/api/routes/events.ts#L43) in the database, for each delivery, a [delivery *job*](src/workers/deliveryWorker.ts#L13) is [generated and enqueued](src/api/routes/events.ts#L58).
 
 During each [delivery attempt](src/services/deliveryService.ts#L14), 
 ```
@@ -58,7 +58,9 @@ During each [delivery attempt](src/services/deliveryService.ts#L14),
 4. A deliveryLog record is created in the database, and the current 
     delivery record's status and attemptNumber are updated as well.
 ```
-If the delivery fails, it is re-attempted by notifying the BullMQ instance via an error throw. The BullMQ worker runs the job again (up to 5 times per the [deliveryQueue settings](src/queue/deliveryQueue.ts#L13)) until it succeeds. If it doesn't succeed after the max number of attempts, the delivery is removed from the queue. It is currently kept in the "failed" set until the set's max capacity is reached.
+If the delivery fails due to server error, it is re-attempted by notifying the BullMQ instance via an error throw. The BullMQ worker runs the job again (up to 5 times per the [deliveryQueue settings](src/queue/deliveryQueue.ts#L13)) until it succeeds. If it doesn't succeed after the max number of attempts, the delivery is removed from the queue. It is currently kept in the "failed" set until the set's max capacity is reached.
+
+If the delivery fails due to a client error, the job is not re-attempted; retrying won't change the outcome.
 
 ---
 ## Webhook Signature Validation
