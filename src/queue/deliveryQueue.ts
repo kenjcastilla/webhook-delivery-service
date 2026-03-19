@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import { redis } from "./redis.js";
+import { config } from "../config/index.js";
 
 export const DELIVERY_QUEUE_NAME = 'webhook-deliveries';
 
@@ -10,7 +11,7 @@ export type DeliveryJobData = {
 export const deliveryQueue = new Queue<DeliveryJobData>(DELIVERY_QUEUE_NAME, {
    connection: redis,
    defaultJobOptions: {
-      attempts: 5,
+      attempts: config.delivery.maxAttempts,
       backoff: {
          type: 'exponential',
          delay: 5000, // 5s, 10s, 20s, 40s, 80s

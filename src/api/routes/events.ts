@@ -4,6 +4,7 @@ import { treeifyError, z } from "zod";
 import { db } from "../../db/index.js";
 import { deliveryQueue } from "../../queue/deliveryQueue.js";
 import { logger } from "../../utils/logger.js";
+import { config } from "../../config/index.js";
 
 
 export const eventsRouter = Router();
@@ -44,7 +45,7 @@ eventsRouter.post('/', async (req: Request, res: Response, next: NextFunction) =
             deliveries: {
                create: subscribers.map((s) => ({
                   subscriberId: s.id,
-                  maxAttempts: 5,
+                  maxAttempts: config.delivery.maxAttempts,
                })),
             }
          },
