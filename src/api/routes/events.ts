@@ -58,10 +58,12 @@ eventsRouter.post('/', async (req: Request, res: Response, next: NextFunction) =
       }
 
       // Enqueue a BullMQ job for each delivery
-      const jobs = event.deliveries.map((d) => 
-         deliveryQueue.add('deliver', { deliveryId: d.id })
+      deliveryQueue.addBulk(
+         event.deliveries.map((d) => ({
+            name: 'deliver',
+            data: { deliveryId: d.id },
+         }))
       );
-      await Promise.all(jobs);
 
       logger.info(`Event ${event.id} (${eventType}) queued for ${subscribers.length} subscriber(s)`);
 
