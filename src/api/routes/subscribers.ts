@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response, Router } from "express";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 import z, { treeifyError } from "zod";
 import { db } from "../../db/index.js";
 import { randomBytes } from "node:crypto";
@@ -86,7 +87,7 @@ subscribersRouter.get('/:id', async (req: Request, res: Response, next: NextFunc
          where: { id: req.params.id }
       });
       if (!subscriber) {
-         res.status(400).json({ error: "Subscriber not found" });
+         res.status(404).json({ error: "Subscriber not found" });
          return;
       }
       res.json(subscriber);
@@ -134,9 +135,13 @@ subscribersRouter.patch('/:id', async (req: Request, res: Response, next: NextFu
  */
 subscribersRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
    try {
-      const subscriber = await db.subscriber.delete({ where: { id: req.params.id } });
+      await db.subscriber.delete({ where: { id: req.params.id } });
       res.status(204).send();
    } catch (e) {
+      if(e instanceof PrismaClientKnownRequestError && e.code === 'P2025') {
+         res.status(404).json({ error: "Subscriber not found" });
+         return;
+      }
       next(e);
    }
 });
