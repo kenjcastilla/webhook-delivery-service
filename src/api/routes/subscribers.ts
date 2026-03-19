@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
 import z, { treeifyError } from "zod";
 import { db } from "../../db/index.js";
-import { randomUUID } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 
 export const subscribersRouter = Router();
@@ -31,13 +31,13 @@ subscribersRouter.post('/', async (req: Request, res: Response, next: NextFuncti
       const subscriber = await db.subscriber.create({
          data: {
             ...parsed.data,
-            secret: randomUUID().replace(/-/g, ''),  //Generate secret      
+            secret: randomBytes(32).toString("hex"),  //Generate secret      
          },
       });
-
-      res.status(201).json(subscriber);
+      const { secret: _secret, ...subscriberWithoutSecret } = subscriber;
+      res.status(201).json(subscriberWithoutSecret);
    } catch (e) {
-      
+      next(e);
    }
 });
 
@@ -48,6 +48,16 @@ subscribersRouter.post('/', async (req: Request, res: Response, next: NextFuncti
 subscribersRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
    try {
     const subscribers = await db.subscriber.findMany({
+      select: {
+         id: true,
+         name: true,
+         targetUrl: true,
+         eventTypes: true,
+         isActive: true,
+         createdAt: true,
+         updatedAt: true,
+         // Do not return secret
+      },
       orderBy: { createdAt: 'desc'},
     });
     res.json(subscribers);
@@ -62,7 +72,19 @@ subscribersRouter.get('/', async (req: Request, res: Response, next: NextFunctio
  */
 subscribersRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
    try { 
-      const subscriber = await db.subscriber.findUnique({ where: { id: req.params.id }});
+      const subscriber = await db.subscriber.findUnique({ 
+         select: {
+            id: true,
+            name: true,
+            targetUrl: true,
+            eventTypes: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+            // Do not return secret
+         },
+         where: { id: req.params.id }
+      });
       if (!subscriber) {
          res.status(400).json({ error: "Subscriber not found" });
          return;
@@ -86,6 +108,16 @@ subscribersRouter.patch('/:id', async (req: Request, res: Response, next: NextFu
       }
 
       const subscriber = await db.subscriber.update({
+         select: {
+            id: true,
+            name: true,
+            targetUrl: true,
+            eventTypes: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+            // Do not return secret
+         },
          where: { id: req.params.id},
          data: parsed.data,
       });
