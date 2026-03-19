@@ -35,11 +35,7 @@ eventsRouter.post('/', async (req: Request, res: Response, next: NextFunction) =
          },
       });
 
-      if (subscribers.length === 0) {
-         res.status(202).json({ message: "Event accepted; no active subscribers matched"});
-         return;
-      }
-
+      
       // Persist the event; create a delivery record for each subscriber
       const event = await db.event.create({
          data: {
@@ -54,6 +50,12 @@ eventsRouter.post('/', async (req: Request, res: Response, next: NextFunction) =
          },
          include: { deliveries: true },
       });
+      
+      // If no subscribers matched, we can consider the event accepted but with no deliveries
+      if (subscribers.length === 0) {
+         res.status(202).json({ message: "Event accepted; no active subscribers matched"});
+         return;
+      }
 
       // Enqueue a BullMQ job for each delivery
       const jobs = event.deliveries.map((d) => 
