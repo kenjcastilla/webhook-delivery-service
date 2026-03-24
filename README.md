@@ -41,13 +41,13 @@ npm run worker
 
 ---
 ## Flow of the Delivery Service
-An *event* (e.g. the creation of a food order) is ingested at an API endpoint (e.g. "api/v1/events") using an Express router. The event arrives at the endpoint as an [object](src/api/routes/events.ts#L28) with the *event type* (e.g. order creation) and the *payload* (e.g. "order id" and "total cost of the order"). 
+An *event* (e.g. the creation of a food order) is ingested at an API endpoint (e.g. "api/v1/events") using an Express router. The event arrives at the endpoint as an [object](src/api/routes/events.ts#L29) with the *event type* (e.g. order creation) and the *payload* (e.g. "order id" and "total cost of the order"). 
 
 After the event is ingested, an [event *record*](prisma/schema.prisma#L25) is created. **If there are no subscribers to the event type, the delivery process ends with the creation of the event record**, as there is no one to send the event information to, but we still want proof of the event's occurrence.
 
-If subscribers have been identified and the event record [created](src/api/routes/events.ts#L43) in the database, for each delivery, a [delivery *job*](src/workers/deliveryWorker.ts#L13) is [generated and enqueued](src/api/routes/events.ts#L58).
+If subscribers have been identified and the event record [created](src/api/routes/events.ts#L40) in the database, for each delivery, a [delivery *job*](src/workers/deliveryWorker.ts#L13) is [generated and enqueued](src/api/routes/events.ts#L61).
 
-During each [delivery attempt](src/services/deliveryService.ts#L14), 
+During each [delivery attempt](src/services/deliveryService.ts#L15), 
 ```
 1. The delivery information ("subscriber" and "event" objects) is retrieved 
     from its respective record in the database's "Delivery" table.
