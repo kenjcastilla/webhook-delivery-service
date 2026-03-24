@@ -6,16 +6,18 @@ import { DeliveryStatus } from "@prisma/client";
 import { UnrecoverableError } from "bullmq";
 
 
-
 export class DeliveryService {
    /**
     * Attempts an HTTP delivery for a given deliveryId and records the result in DeliveryLog.
     */
-   
+
    async attemptDelivery(deliveryId: string, attemptNumber: number): Promise<void> {
       const delivery = await db.delivery.findUniqueOrThrow({
          where: { id: deliveryId },
-         include: { event: true, subscriber: true }
+         include: {
+            event: { select: { payload: true, eventType: true } },
+            subscriber: { select: { targetUrl: true, secret: true } }
+         }
       });
 
       const { subscriber, event } = delivery;
@@ -41,7 +43,7 @@ export class DeliveryService {
             timeout: 10 * 1000, // 10s
             validateStatus: (status) => status < 500, // only server error codes (5xx) are relevant here
          });
-         
+
          statusCode = response.status;
          responseBody = JSON.stringify(response.data).slice(0, 1000);
          success = response.status >= 200 && response.status < 300;
@@ -57,12 +59,12 @@ export class DeliveryService {
       let newStatus: DeliveryStatus;
       if (success) {
          newStatus = DeliveryStatus.DELIVERED;
-      } 
+      }
       // Won't retry a delivery after last attempt or upon receiving a 4xx response (client error)
       else if (isLastAttempt || (statusCode && statusCode >= 400 && statusCode < 500)) {
          newStatus = DeliveryStatus.DEAD;
       } else {
-         newStatus = DeliveryStatus.PENDING;
+         newStatus = DeliveryStatus.FAILED;
       }
 
       // Persist attempt log and update delivery automatically
@@ -86,7 +88,7 @@ export class DeliveryService {
             },
          }),
       ]);
-      
+
       // Re-throw to notify BullMQ (notification to retry or mark as failed)
       if (!success) {
          if (isLastAttempt || (statusCode && statusCode >= 400 && statusCode < 500)) {
