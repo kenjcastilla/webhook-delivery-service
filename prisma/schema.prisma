@@ -72,7 +72,6 @@ model DeliveryLog {
 
 enum DeliveryStatus {
   PENDING
-  DELIVERING
   DELIVERED
   FAILED
   DEAD // When max no. retries has been exceeded

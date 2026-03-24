@@ -3,8 +3,8 @@ import { db } from '../../db/index.js';
 import { deliveryQueue } from '../../queue/deliveryQueue.js';
 import { DeliveryStatus } from '@prisma/client';
 
-export const deliveriesRouter = Router();
 
+export const deliveriesRouter = Router();
 
 /**GET request to api/v1/deliveries
  * List deliveries with optional status filter
