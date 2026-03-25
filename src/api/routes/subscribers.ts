@@ -46,22 +46,22 @@ subscribersRouter.post('/', async (req: Request, res: Response, next: NextFuncti
  * GET /api/v1/subscribers
  * List all subscribers
  */
-subscribersRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
+subscribersRouter.get('/', async (_req: Request, res: Response, next: NextFunction) => {
    try {
-    const subscribers = await db.subscriber.findMany({
-      select: {
-         id: true,
-         name: true,
-         targetUrl: true,
-         eventTypes: true,
-         isActive: true,
-         createdAt: true,
-         updatedAt: true,
-         // Do not return secret
-      },
-      orderBy: { createdAt: 'desc'},
-    });
-    res.json(subscribers);
+      const subscribers = await db.subscriber.findMany({
+         select: {
+            id: true,
+            name: true,
+            targetUrl: true,
+            eventTypes: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+            // Do not return secret
+         },
+         orderBy: { createdAt: 'desc' },
+      });
+      res.json(subscribers);
    } catch (e) {
       next(e);
    }
@@ -72,8 +72,8 @@ subscribersRouter.get('/', async (req: Request, res: Response, next: NextFunctio
  * Get a single subscriber using id
  */
 subscribersRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
-   try { 
-      const subscriber = await db.subscriber.findUnique({ 
+   try {
+      const subscriber = await db.subscriber.findUnique({
          select: {
             id: true,
             name: true,
@@ -119,7 +119,7 @@ subscribersRouter.patch('/:id', async (req: Request, res: Response, next: NextFu
             updatedAt: true,
             // Do not return secret
          },
-         where: { id: req.params.id},
+         where: { id: req.params.id },
          data: parsed.data,
       });
 
@@ -138,7 +138,7 @@ subscribersRouter.delete('/:id', async (req: Request, res: Response, next: NextF
       await db.subscriber.delete({ where: { id: req.params.id } });
       res.status(204).send();
    } catch (e) {
-      if(e instanceof PrismaClientKnownRequestError && e.code === 'P2025') {
+      if (e instanceof PrismaClientKnownRequestError && e.code === 'P2025') {
          res.status(404).json({ error: "Subscriber not found" });
          return;
       }

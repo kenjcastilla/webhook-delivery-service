@@ -45,7 +45,11 @@ export class DeliveryService {
          });
 
          statusCode = response.status;
-         responseBody = JSON.stringify(response.data).slice(0, 1000);
+         const fullResponseBody = JSON.stringify(response.data).slice(0, 1000);
+         if (fullResponseBody.length > 1000) {
+            logger.debug(`Full response body for delivery ${deliveryId}: ${fullResponseBody}`);
+         }
+         responseBody = fullResponseBody.slice(0, 1000); // Store only first 1000 chars to avoid bloating the DB
          success = response.status >= 200 && response.status < 300;
       } catch (e: unknown) {
          errorMessage = e instanceof Error ? e.message : String(e);

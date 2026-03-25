@@ -17,6 +17,6 @@ export const deliveryQueue = new Queue<DeliveryJobData>(DELIVERY_QUEUE_NAME, {
          delay: 5000, // 5s, 10s, 20s, 40s, 80s
       },
       removeOnComplete: { count: 1000 },
-      removeOnFail: { count: 5000 },
+      removeOnFail: { count: 1000 * config.delivery.maxAttempts },
    },
 });
