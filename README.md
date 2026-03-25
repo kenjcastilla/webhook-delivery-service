@@ -47,7 +47,7 @@ After the event is ingested, an [event *record*](prisma/schema.prisma#L25) is cr
 
 If subscribers have been identified and the event record [created](src/api/routes/events.ts#L40) in the database, for each delivery, a [delivery *job*](src/workers/deliveryWorker.ts#L13) is [generated and enqueued](src/api/routes/events.ts#L61).
 
-During each [delivery attempt](src/services/deliveryService.ts#L15), 
+During each [delivery attempt](src/services/deliveryService.ts#L14), 
 ```
 1. The delivery information ("subscriber" and "event" objects) is retrieved 
     from its respective record in the database's "Delivery" table.

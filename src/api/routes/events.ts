@@ -93,7 +93,8 @@ eventsRouter.get('/:id', async (req: Request, res: Response, next: NextFunction)
       });
 
       if (!event) {
-         res.status(404).json({ error: "Event not found" })
+         res.status(404).json({ error: "Event not found" });
+         return;
       }
       res.json(event);
    } catch (e) {
