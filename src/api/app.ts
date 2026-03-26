@@ -33,7 +33,7 @@ export function createApp(): Application {
    }));
 
    // Health check
-   app.get("/health", (req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
+   app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
 
    // Routes
    app.use("/api/v1/events", eventsRouter);
