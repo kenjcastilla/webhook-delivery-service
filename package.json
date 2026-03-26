@@ -11,7 +11,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
-    "test": "jest --runInBand",
+    "test": "NODE_OPTIONS='--localstorage-file=./.localstorage.json' jest --runInBand",
     "test:watch": "jest --watch",
     "lint": "eslint 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts'"

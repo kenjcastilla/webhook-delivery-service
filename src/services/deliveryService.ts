@@ -1,9 +1,9 @@
-import crypto from "crypto";
 import { db } from "../db/index.js";
 import axios from "axios";
 import { logger } from "../utils/logger.js";
 import { DeliveryStatus } from "@prisma/client";
 import { UnrecoverableError } from "bullmq";
+import { sign } from "./signPayload.js";
 
 
 export class DeliveryService {
@@ -25,7 +25,7 @@ export class DeliveryService {
 
       // Sign the payload
       const body = JSON.stringify(event.payload);
-      const signature = this.sign(body, subscriber.secret);
+      const signature = sign(body, subscriber.secret);
 
       let statusCode: number | null = null;
       let responseBody: string | null = null;
@@ -104,7 +104,4 @@ export class DeliveryService {
       logger.info(`Delivery ${deliveryId} succeeded on attempt ${attemptNumber}`);
    }
 
-   private sign(body: string, secret: string): string {
-      return "sha256=" + crypto.createHmac("sha256", secret).update(body).digest("hex");
-   }
 }
