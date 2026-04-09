@@ -1,5 +1,5 @@
-import type { Config } from "@jest/types";
 import { createDefaultPreset } from "ts-jest";
+
 
 const tsJestTransformCfg = createDefaultPreset().transform;
 
@@ -8,5 +8,5 @@ export default {
   transform: {
     ...tsJestTransformCfg,
   },
-  passWithNoTests: true,
+  setupFilesAfterEnv: ["<rootDir>/singleton.ts"],
 };

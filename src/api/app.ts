@@ -4,9 +4,11 @@ import express, { Application } from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
-import { eventsRouter } from "./routes/events.js";
-import { subscribersRouter } from "./routes/subscribers.js";
-import { deliveriesRouter } from "./routes/deliveries.js";
+import { createEventsRouter } from "./routes/events.js";
+import { createSubscribersRouter } from "./routes/subscribers.js";
+import { createDeliveriesRouter } from "./routes/deliveries.js";
+import { db } from "../db/index.js";
+import { deliveryQueue } from "../queue/deliveryQueue.js";
 import { logger } from "../utils/logger.js";
 import { notFound } from "./middleware/notFound.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -36,9 +38,9 @@ export function createApp(): Application {
    app.get("/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
 
    // Routes
-   app.use("/api/v1/events", eventsRouter);
-   app.use("/api/v1/subscribers", subscribersRouter);
-   app.use("/api/v1/deliveries", deliveriesRouter);
+   app.use("/api/v1/events", createEventsRouter(db, deliveryQueue));
+   app.use("/api/v1/subscribers", createSubscribersRouter(db));
+   app.use("/api/v1/deliveries", createDeliveriesRouter(db, deliveryQueue));
 
    // Error handling
    app.use(notFound);

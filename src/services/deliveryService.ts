@@ -1,9 +1,9 @@
-import { db } from "../db/index.js";
+import { db as prisma } from "../db/index";
 import axios from "axios";
-import { logger } from "../utils/logger.js";
+import { logger } from "../utils/logger";
 import { DeliveryStatus } from "@prisma/client";
 import { UnrecoverableError } from "bullmq";
-import { sign } from "./signPayload.js";
+import { sign } from "./signPayload";
 
 
 export class DeliveryService {
@@ -11,7 +11,9 @@ export class DeliveryService {
     * Attempts an HTTP delivery for a given deliveryId and records the result in DeliveryLog.
     */
 
-   async attemptDelivery(deliveryId: string, attemptNumber: number): Promise<void> {
+   async attemptDelivery(deliveryId: string, attemptNumber: number, db = prisma): Promise<void> {
+      logger.debug(`Starting delivery attempt for ${deliveryId}, attempt number: ${attemptNumber}...`);
+
       const delivery = await db.delivery.findUniqueOrThrow({
          where: { id: deliveryId },
          include: {
@@ -21,6 +23,9 @@ export class DeliveryService {
       });
 
       const { subscriber, event } = delivery;
+
+      logger.debug(`Fetched subscriber and event details: targetUrl=${subscriber.targetUrl}, secret=${subscriber.secret ? "****" : "null"}, eventType=${event.eventType}, payload=${JSON.stringify(event.payload)}`);
+
       const startTime = Date.now();
 
       // Sign the payload
@@ -42,18 +47,30 @@ export class DeliveryService {
             },
             timeout: 10 * 1000, // 10s
             validateStatus: (status) => status < 500, // only server error codes (5xx) are relevant here
+            maxRedirects: 0, // treat redirects as failures to avoid losing event deliveries to unintended endpoints, will throw error if a redirect is encountered
          });
 
          statusCode = response.status;
-         const fullResponseBody = JSON.stringify(response.data).slice(0, 1000);
+
+         logger.debug(`Received response with status ${statusCode} for delivery ${deliveryId}`);
+
+         const fullResponseBody = JSON.stringify(response.data);
          if (fullResponseBody.length > 1000) {
-            logger.debug(`Full response body for delivery ${deliveryId}: ${fullResponseBody}`);
+            logger.info(`Full response body for delivery ${deliveryId}: ${fullResponseBody}`);
          }
          responseBody = fullResponseBody.slice(0, 1000); // Store only first 1000 chars to avoid bloating the DB
          success = response.status >= 200 && response.status < 300;
-      } catch (e: unknown) {
-         errorMessage = e instanceof Error ? e.message : String(e);
-         logger.warn(`Delivery attempt failed for ${deliveryId}: ${errorMessage}`);
+      } catch (e) {
+         if (axios.isAxiosError(e) && e.response && e.response.status >= 300 && e.response.status < 400) {
+            // Handle redirects as failures without retrying; subscriber should update targetUrl
+            logger.debug(`Redirect encountered with status: ${e.response.status}. Subscriber should update targetUrl to avoid failed deliveries.`);
+         }
+         else {
+            errorMessage = e instanceof Error ? e.message : String(e);
+            logger.debug(`Delivery attempt failed for ${deliveryId}: ${errorMessage}`);
+         }
+
+         statusCode = axios.isAxiosError(e) && e.response ? e.response.status : null;
       }
 
       const duration = Date.now() - startTime;
@@ -65,7 +82,7 @@ export class DeliveryService {
          newStatus = DeliveryStatus.DELIVERED;
       }
       // Won't retry a delivery after last attempt or upon receiving a 4xx response (client error)
-      else if (isLastAttempt || (statusCode && statusCode >= 400 && statusCode < 500)) {
+      else if (isLastAttempt || (statusCode && statusCode >= 300 && statusCode < 500)) {
          newStatus = DeliveryStatus.DEAD;
       } else {
          newStatus = DeliveryStatus.FAILED;
@@ -95,13 +112,11 @@ export class DeliveryService {
 
       // Re-throw to notify BullMQ (notification to retry or mark as failed)
       if (!success) {
-         if (isLastAttempt || (statusCode && statusCode >= 400 && statusCode < 500)) {
-            throw new UnrecoverableError(errorMessage ?? `Delivery failed with status ${statusCode} and will not be retried`); // Won't retry
+         if (isLastAttempt || (statusCode && statusCode >= 300 && statusCode < 500)) {
+            throw new UnrecoverableError(errorMessage ?? `Delivery failed with status ${statusCode} and will NOT be retried`); // Won't retry
          }
-         throw new Error(errorMessage ?? `Non-2xx response: ${statusCode}`); // Will retry
+         throw new Error(errorMessage ?? `Delivery failed with status ${statusCode}; will be retried`); // Will retry
       }
-
       logger.info(`Delivery ${deliveryId} succeeded on attempt ${attemptNumber}`);
    }
-
 }
