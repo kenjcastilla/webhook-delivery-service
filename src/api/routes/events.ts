@@ -1,103 +1,99 @@
-import { NextFunction, Request, Response, Router } from "express";
-import { Prisma } from "@prisma/client";
+import { Router, Request, Response, NextFunction } from "express";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { treeifyError, z } from "zod";
-import { db } from "../../db/index.js";
-import { deliveryQueue } from "../../queue/deliveryQueue.js";
-import { logger } from "../../utils/logger.js";
-import { config } from "../../config/index.js";
-
-
-export const eventsRouter = Router();
+import { db as prisma } from "../../db/index";
+import { deliveryQueue } from "../../queue/deliveryQueue";
+import { logger } from "../../utils/logger";
+import { config } from "../../config/index";
 
 const IngestEventSchema = z.object({
    eventType: z.string().min(1).max(100),
    payload: z.record(z.string(), z.unknown()),
 });
 
-/**
- * POST /api/v1/events
- * Ingest a new event and attach it to respective subscribers
- */
-eventsRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
-   try {
-      const parsed = IngestEventSchema.safeParse(req.body);
-      if (!parsed.success) {
-         res.status(400).json({ error: 'Invalid request body', details: treeifyError(parsed.error) });
-         return;
-      }
+export function createEventsRouter(
+   db: PrismaClient = prisma,
+   queue = deliveryQueue
+) {
+   const router = Router();
 
-      const { eventType, payload } = parsed.data;
-
-      // Find active subscribers listening to this event type
-      const subscribers = await db.subscriber.findMany({
-         where: {
-            isActive: true,
-            eventTypes: { has: eventType }
-         },
-      });
-
-      
-      // Persist the event; create a delivery record for each subscriber
-      const event = await db.event.create({
-         data: {
-            eventType,
-            payload: payload as Prisma.InputJsonValue,
-            deliveries: {
-               create: subscribers.map((s) => ({
-                  subscriberId: s.id,
-                  maxAttempts: config.delivery.maxAttempts,
-               })),
-            }
-         },
-         include: { deliveries: true },
-      });
-      
-      // If no subscribers matched, we can consider the event accepted but with no deliveries
-      if (subscribers.length === 0) {
-         res.status(202).json({ message: "Event accepted; no active subscribers matched"});
-         return;
-      }
-
-      // Enqueue a BullMQ job for each delivery
-      deliveryQueue.addBulk(
-         event.deliveries.map((d) => ({
-            name: 'deliver',
-            data: { deliveryId: d.id },
-         }))
-      );
-
-      logger.info(`Event ${event.id} (${eventType}) queued for ${subscribers.length} subscriber(s)`);
-
-      res.status(202).json({
-         eventId: event.id,
-         deliveriesCreated: event.deliveries.length,
-      });
-   } catch (e) {
-      next(e);
-   }
-});
-
-/**
- * GET /api/v1/events/:id
- * Retrieve a single event along with its delivery statuses
- */
-eventsRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
-   try {
-      const event = await db.event.findUnique({
-         where: { id: req.params.id },
-         include: {
-            deliveries: {
-               include: { logs: { orderBy: { createdAt: 'asc' } } }
-            }
+   router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const parsed = IngestEventSchema.safeParse(req.body);
+         if (!parsed.success) {
+            res.status(400).json({ error: 'Invalid request body', details: treeifyError(parsed.error) });
+            return;
          }
-      });
 
-      if (!event) {
-         res.status(404).json({ error: "Event not found" });
-         return;
+         const { eventType, payload } = parsed.data;
+
+         const subscribers = await db.subscriber.findMany({
+            where: {
+               isActive: true,
+               eventTypes: { has: eventType },
+            },
+         });
+
+         const event = await db.event.create({
+            data: {
+               eventType,
+               payload: payload as Prisma.InputJsonValue,
+               deliveries: {
+                  create: subscribers.map((subscriber) => ({
+                     subscriberId: subscriber.id,
+                     maxAttempts: config.delivery.maxAttempts,
+                  })),
+               },
+            },
+            include: { deliveries: true },
+         });
+
+         if (subscribers.length === 0) {
+            res.status(202).json({ message: "Event accepted; no active subscribers matched" });
+            return;
+         }
+
+         await queue.addBulk(
+            event.deliveries.map((delivery) => ({
+               name: 'deliver',
+               data: { deliveryId: delivery.id },
+            }))
+         );
+
+         logger.info(`Event ${event.id} (${eventType}) queued for ${subscribers.length} subscriber(s)`);
+
+         res.status(202).json({
+            eventId: event.id,
+            deliveriesCreated: event.deliveries.length,
+         });
+      } catch (e) {
+         next(e);
       }
-      res.json(event);
-   } catch (e) {
-      next(e);
-   }
-});
+   });
+
+   router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+      try {
+         const event = await db.event.findUnique({
+            where: { id: req.params.id },
+            include: {
+               deliveries: {
+                  include: { logs: { orderBy: { createdAt: 'asc' } } },
+               },
+            },
+         });
+
+         if (!event) {
+            res.status(404).json({ error: "Event not found" });
+            return;
+         }
+
+         res.json(event);
+      } catch (e) {
+         next(e);
+      }
+   });
+
+   return router;
+}
+
+export const eventsRouter = createEventsRouter();

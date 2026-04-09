@@ -1,44 +1,41 @@
 {
   // Visit https://aka.ms/tsconfig to read more about this file
-    "include": [
-      "src/**/*",
-      "types/**/*",
-      "tests/**/*",
-    ],
-    "exclude": [
-      "tests",
-    ],
+  "include": [
+    "src/**/*",
+    "types/**/*",
+    "tests/**/*",
+    "jest.config.ts",
+    "singleton.ts"
+  ],
+  "exclude": [],
   "compilerOptions": {
     // File Layout
     "rootDir": ".",
     "outDir": "./dist",
-
     // Environment Settings
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "types": ["jest", "node", ],
-    
+    "types": [
+      "node",
+      "jest"
+    ],
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
     // and npm install -D @types/node
-    
     "typeRoots": [
       "./node_modules/@types",
       "./src/types"
     ],
-
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-
     // Typechecking Options
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-
     // Style Options
     "noImplicitReturns": true,
     // "noImplicitOverride": true,
@@ -46,7 +43,6 @@
     "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true,
     // "noPropertyAccessFromIndexSignature": true,
-
     "jsx": "react-jsx",
     "verbatimModuleSyntax": false,
     "isolatedModules": true,
