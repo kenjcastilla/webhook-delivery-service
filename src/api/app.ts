@@ -4,21 +4,21 @@ import express, { Application } from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
-import { createEventsRouter } from "./routes/events.js";
-import { createSubscribersRouter } from "./routes/subscribers.js";
-import { createDeliveriesRouter } from "./routes/deliveries.js";
-import { db } from "../db/index.js";
-import { deliveryQueue } from "../queue/deliveryQueue.js";
-import { logger } from "../utils/logger.js";
-import { notFound } from "./middleware/notFound.js";
-import { errorHandler } from "./middleware/errorHandler.js";
+import { createEventsRouter } from "./routes/events";
+import { createSubscribersRouter } from "./routes/subscribers";
+import { createDeliveriesRouter } from "./routes/deliveries";
+import { db } from "../db/index";
+import { deliveryQueue } from "../queue/deliveryQueue";
+import { logger } from "../utils/logger";
+import { notFound } from "./middleware/notFound";
+import { errorHandler } from "./middleware/errorHandler";
 
 
 export function createApp(): Application {
    const app = express();
 
    // Security and parsing
-   app.use(helmet);
+   app.use(helmet());
    app.use(cors());
    app.use(compression());
    app.use(express.json());

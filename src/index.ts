@@ -1,8 +1,8 @@
-import { createApp } from "./api/app.js";
-import { config } from "./config/index.js";
-import { db } from "./db/index.js";
-import { redis } from "./queue/redis.js";
-import { logger } from "./utils/logger.js";
+import { createApp } from "./api/app";
+import { config } from "./config/index";
+import { db } from "./db/index";
+import { redis } from "./queue/redis";
+import { logger } from "./utils/logger";
 
 async function main() {
    // Verify database and Redis connections on startup

@@ -1,9 +1,9 @@
 import { Job, Worker } from "bullmq";
-import { DeliveryService } from "../services/deliveryService.js";
-import { DELIVERY_QUEUE_NAME, DeliveryJobData } from "../queue/deliveryQueue.js";
-import { logger } from "../utils/logger.js";
-import { redis } from "../queue/redis.js";
-import { config } from "../config/index.js";
+import { DeliveryService } from "../services/deliveryService";
+import { DELIVERY_QUEUE_NAME, DeliveryJobData } from "../queue/deliveryQueue";
+import { logger } from "../utils/logger";
+import { redis } from "../queue/redis";
+import { config } from "../config/index";
 
 
 const deliveryService = new DeliveryService();
