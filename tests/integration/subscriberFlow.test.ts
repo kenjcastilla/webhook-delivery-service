@@ -3,7 +3,7 @@ import { app, prisma } from './setup';
 
 describe('Subscriber Integration', () => {
   it('should create and retrieve a subscriber', async () => {
-    const subscriberData = { url: 'https://example.com/webhook', secret: 'secret123' };
+    const subscriberData = { name: "Test Subscriber", targetUrl: 'https://example.com/webhook', eventTypes: ['subscriber.created'] };
 
     // Create via API
     const createRes = await request(app)
@@ -18,10 +18,10 @@ describe('Subscriber Integration', () => {
       .get(`/api/v1/subscribers/${subscriberId}`)
       .expect(200);
 
-    expect(getRes.body.url).toBe(subscriberData.url);
+    expect(getRes.body.targetUrl).toBe(subscriberData.targetUrl);
 
     // Verify in DB
     const dbSubscriber = await prisma.subscriber.findUnique({ where: { id: subscriberId } });
-    expect(dbSubscriber?.targetUrl).toBe(subscriberData.url);
+    expect(dbSubscriber?.targetUrl).toBe(subscriberData.targetUrl);
   });
 });

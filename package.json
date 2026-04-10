@@ -12,6 +12,7 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "test": "NODE_OPTIONS='--localstorage-file=./.localstorage.json' jest --runInBand",
+    "test:integration": "NODE_OPTIONS='--localstorage-file=./.localstorage.json' docker compose up -d && jest --config jest.config.integration.ts  --detectOpenHandles --runInBand",
     "test:watch": "jest --watch --passWithNoTests",
     "lint": "eslint 'src/**/*.ts'",
     "format": "prettier --write 'src/**/*.ts'"

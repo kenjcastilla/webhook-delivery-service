@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
-import { redis } from "./redis.js";
-import { config } from "../config/index.js";
+import { redis } from "./redis";
+import { config } from "../config/index";
 
 export const DELIVERY_QUEUE_NAME = 'webhook-deliveries';
 
