@@ -58,7 +58,7 @@ During each [delivery attempt](src/services/deliveryService.ts#L14),
 4. A deliveryLog record is created in the database, and the current 
     delivery record's status and attemptNumber are updated as well.
 ```
-If the delivery fails due to server error, it is re-attempted by notifying the BullMQ instance via an error throw. The BullMQ worker runs the job again (up to 5 times per the [deliveryQueue settings](src/queue/deliveryQueue.ts#L13)) until it succeeds. If it doesn't succeed after the max number of attempts, the delivery is removed from the queue. It is currently kept in the "failed" set until the set's max capacity is reached.
+If the delivery fails due to server error, it is re-attempted by notifying the BullMQ instance via an error throw. The BullMQ worker runs the job again (by default up to 5 times per the [deliveryQueue settings](src/queue/deliveryQueue.ts#L13)) until it succeeds. If it doesn't succeed after the max number of attempts, the delivery is removed from the queue. It is currently kept in the "failed" set until the set's max capacity is reached.
 
 If the delivery fails due to a client error, the job is not re-attempted, as retrying won't change the outcome.
 
