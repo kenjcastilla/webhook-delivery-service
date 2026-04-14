@@ -81,7 +81,7 @@ function verifySignature(body: string, secret: string, signature: string): boole
 npm run test
 ```
 
-*Integration* tests use a real database connection, so make sure this is already set up (see "Getting Started section of this README).
+*Integration* tests use a real database connection, so make sure this is already set up (see "Getting Started" section of this README).
 
 **Run *integration tests:***
 ```bash
